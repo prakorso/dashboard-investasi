@@ -1177,22 +1177,20 @@ async function fetchSheet(){
 
 async function postSheet(payload){
   if (!WEB_URL) {
-    console.warn('[postSheet] WEB_URL kosong — data hanya tersimpan lokal');
+    console.warn('[postSheet] WEB_URL kosong');
     return false;
   }
   try {
-    const r = await fetch(WEB_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {'Content-Type':'application/json'},
-      signal: AbortSignal.timeout(15000)
-    });
+    // Use GET with encoded params — avoids CORS preflight issues with Apps Script
+    const params = new URLSearchParams({ data: JSON.stringify(payload) });
+    const url = `${WEB_URL}?${params.toString()}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(20000) });
     const d = await r.json();
-    if (d.error) { console.error('[postSheet] Error dari Apps Script:', d.error); return false; }
+    if (d.error) { console.error('[postSheet] Error:', d.error); return false; }
     console.log('[postSheet] OK:', payload.action, d);
     return true;
   } catch(e) {
-    console.error('[postSheet] Fetch error:', e.message);
+    console.error('[postSheet] Error:', e.message);
     return false;
   }
 }
